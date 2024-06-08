@@ -102,7 +102,7 @@ let plateau;
 let simulateur;
 let contexte;
 let cases = [];
-let trains = new Array();
+let trains = [];
 let boutons = [
     document.getElementById('bouton_foret'),
     document.getElementById('bouton_eau'),
@@ -150,32 +150,108 @@ class Plateau{
 		}
 	}
 }
-
+// ----------- Classe Train
 class Train {
     constructor(x, y, longueur) {
-        this.x = x;
-        this.y = y;
+        this.positions = [{ x, y}];
         this.longueur = longueur;
         this.direction = 'droite';
+        for (let i = 1; i < longueur; i++) {
+            this.positions.push({ x: x - i, y });
+        }
+		this.inter=null;
     }
 
     avancer() {
+        const nouvellePosition = { ...this.positions[0] };
         if (this.direction === 'droite') {
-            this.x++;
+            nouvellePosition.x++;
         } else if (this.direction === 'gauche') {
-            this.x--;
+            nouvellePosition.x--;
         } else if (this.direction === 'haut') {
-            this.y--;
+            nouvellePosition.y--;
         } else if (this.direction === 'bas') {
-            this.y++;
+            nouvellePosition.y++;
+        }
+
+        this.positions.unshift(nouvellePosition);
+		
+        if (this.verifierExplosion()) {
+            while(this.positions.length>0){
+				this.supprimerCase();
+			}
+        }
+        this.mettreAJourDirection();
+		this.dessiner();
+		this.supprimerCase();
+    }
+
+	
+    mettreAJourDirection() {
+		const pos = this.positions[0];
+        const typeDeCase = plateau.cases[pos.x][pos.y];
+        switch (typeDeCase) {
+            case Type_de_case.Rail_droite_vers_haut:
+				if(pos.y != this.positions[1].y){
+					this.direction = 'gauche';
+				}else{
+					this.direction = 'haut';
+				}
+				break;
+            case Type_de_case.Rail_haut_vers_droite:
+				if(pos.y != this.positions[1].y){
+					this.direction = 'droite';
+				}else{
+					this.direction = 'bas';
+				}
+                break;
+            case Type_de_case.Rail_droite_vers_bas:
+				if(pos.y != this.positions[1].y){
+					this.direction = 'gauche';
+				}else{
+					this.direction = 'bas';
+				}
+                break;
+            case Type_de_case.Rail_bas_vers_droite:
+				if(pos.y != this.positions[1].y){
+					this.direction = 'droite';
+				}else{
+					this.direction = 'haut';
+				}
+                break;
         }
     }
 
-    verifierExplosion(plateau) {
-        return this.x < 0 || this.x >= PLATEAU_LARGEUR || this.y < 0 || this.y >= PLATEAU_HAUTEUR || plateau.cases[this.x][this.y] === Type_de_case.Eau || plateau.cases[this.x][this.y] === Type_de_case.Foret;
+    dessiner() {
+        this.positions.forEach((position, index) => {
+            const type = (index === 0) ? Type_de_case.Locomotive : Type_de_case.Wagon;
+            const image = image_of_case(type);
+            contexte.drawImage(image, position.x * LARGEUR_CASE, position.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
+        });
+		
+    }
+
+	supprimerCase(){
+		const dernierePosition = this.positions[this.positions.length - 1];
+        contexte.drawImage(image_of_case(plateau.cases[dernierePosition.x][dernierePosition.y]),dernierePosition.x * LARGEUR_CASE, dernierePosition.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
+		this.positions.pop();
+	}
+
+    verifierExplosion() {
+        const position = this.positions[0];
+		console.log(position.x < 0 || position.x >= LARGEUR_PLATEAU || position.y < 0 || position.y >= HAUTEUR_PLATEAU || plateau.cases[position.x][position.y] === Type_de_case.Eau || plateau.cases[position.x][position.y] === Type_de_case.Foret);
+        return (position.x < 0 || position.x >= LARGEUR_PLATEAU || position.y < 0 || position.y >= HAUTEUR_PLATEAU || plateau.cases[position.x][position.y] === Type_de_case.Eau || plateau.cases[position.x][position.y] === Type_de_case.Foret);
+    }
+	stop(){
+		clearInterval(this.inter);
+	}
+
+    move(){
+        this.inter = setInterval(() => {
+            this.avancer();
+        }, 500);
     }
 }
-
 
 
 /************************************************************/
@@ -201,20 +277,8 @@ function image_of_case(type_de_case){
 function dessine_case(contexte, plateau, x, y){
 	let la_case = plateau.cases[x][y];
 	let image_a_afficher;
-	if(la_case.nom === 'locomotive'){
-		image_a_afficher = image_of_case(la_case);
-		contexte.drawImage(image_a_afficher, x * LARGEUR_CASE, y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
-		for(let i=1;i<longueurTrain;i++){
-			let xi=x-i;
-			la_case = plateau.cases[xi][y];
-			image_a_afficher = image_of_case(la_case);
-			contexte.drawImage(image_a_afficher, xi * LARGEUR_CASE, y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
-		}
-	}else{
-		image_a_afficher = image_of_case(la_case);
-		contexte.drawImage(image_a_afficher, x * LARGEUR_CASE, y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);	
-	}
-
+	image_a_afficher = image_of_case(la_case);
+	contexte.drawImage(image_a_afficher, x * LARGEUR_CASE, y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
 }
 
 function dessine_plateau(page, plateau){
@@ -227,7 +291,6 @@ function dessine_plateau(page, plateau){
 
 	// NOTE: à compléter…
 }
-
 
 document.getElementById('bouton_foret').addEventListener('click', () => selectConstructionMode(Type_de_case.Foret));
 document.getElementById('bouton_eau').addEventListener('click', () => selectConstructionMode(Type_de_case.Eau));
@@ -266,7 +329,6 @@ function selectConstructionMode(type_de_case, boutonID = null) {
 		boutons.filter(bouton => bouton.alt.toUpperCase() === type_de_case.nom.toUpperCase()).forEach(bouton => bouton.disabled = true);
 		mode_construction=type_de_case;
 	}
-	
 }
 
 document.getElementById('simulateur').addEventListener('click', (event) => {
@@ -279,24 +341,22 @@ document.getElementById('simulateur').addEventListener('click', (event) => {
 	if(mode_construction ==='train'){
 		if (peutAjouterTrain(x, y, longueurTrain)) {
 			ajouterTrain(x, y, longueurTrain);
-			dessine_case(contexte, plateau,x,y);
-		} else {
+		}else {
 			console.log('Impossible d\'ajouter le train ici.');
 		}
 	}else{
 		plateau.modifierCase(x,y,mode_construction);
-
 		dessine_case(contexte, plateau,x,y);
 	}
-
 });
 
 function ajouterTrain(x, y, longueurTrain) {
 
-    plateau.cases[x][y] = Type_de_case.Locomotive;
-    for (let i = 1; i < longueurTrain; i++) {
-        plateau.cases[x - i][y] = Type_de_case.Wagon;
-    }
+    let newTrain = new Train(x, y, longueurTrain);
+    trains.push(newTrain);
+	newTrain.dessiner(contexte);
+	newTrain.move();
+	//--- Résoudre le 2x vitesse ici
 }
 
 
@@ -310,10 +370,51 @@ function peutAjouterTrain(x, y, longueurTrain) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
+// --------------------- gestion du button pause 
+
+document.getElementById('bouton_pause').addEventListener('click',(event)=>togglePause());
+
+let enPause = false;
+let i=0; // ------------------- Problème si on ajoute un train après le premier pause. ( 2x Vitesse )
+let trainInterval;
+
+
+function togglePause() {
+    enPause = !enPause; 
+    const boutonPause = document.getElementById('bouton_pause');
+    boutonPause.textContent = enPause ? "Redémarrer" : "Pause";
+	
+    if (enPause) {
+		if( i===0 ){
+			trains.forEach(train => {
+				train.stop();
+			});
+			i++;
+		}else{
+			clearInterval(trainInterval);
+		}
+        
+	}else {
+		if(trains != null){
+    	    demarrerSimulation();
+		}
+    }
+}
+
+function demarrerSimulation() {
+    trainInterval = setInterval(() => {
+        moveAllTrains();
+    }, 500); 
+}
+
+function moveAllTrains() {
+    trains.forEach(train => {
+        train.avancer();
+    });
+}
 
 // TODO : d'autres méthodes si besoin
 
@@ -431,7 +532,6 @@ function cree_plateau_initial(plateau){
 	plateau.cases[21][13] = Type_de_case.Eau;
 }
 
-
 /************************************************************/
 // Fonction principale
 /************************************************************/
@@ -442,15 +542,11 @@ function tchou(){
 	// Variables DOM
 	/*------------------------------------------------------------*/
 	contexte = document.getElementById('simulateur').getContext("2d");
-
 	// NOTE: ce qui suit est sûrement à compléter voire à réécrire intégralement
-
 	plateau = new Plateau();
 	cree_plateau_initial(plateau);
-
 	// Dessine le plateau
 	dessine_plateau(contexte, plateau);
-
 }
 
 /************************************************************/
