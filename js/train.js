@@ -98,6 +98,10 @@ IMAGE_WAGON.src = 'images/wagon.png';
 // Variables globales
 /************************************************************/
 
+let activerSimulation = false;
+let enPause = false;
+let trainInterval;
+let Gcode=0
 let plateau;
 let simulateur;
 let contexte;
@@ -159,7 +163,8 @@ class Train {
         for (let i = 1; i < longueur; i++) {
             this.positions.push({ x: x - i, y });
         }
-		this.inter=null;
+		this.inMotion=false;
+		this.index=Gcode++;
     }
 
     avancer() {
@@ -179,6 +184,14 @@ class Train {
         if (this.verifierExplosion()) {
             while(this.positions.length>0){
 				this.supprimerCase();
+			}
+			const trainIndex = trains.findIndex(train => train.index === this.index);
+			if (trainIndex !== -1) {
+				trains.splice(trainIndex, 1);
+			}
+			if(trains.length===0){
+				activerSimulation=false;
+				clearInterval(trainInterval);
 			}
         }
         this.mettreAJourDirection();
@@ -239,17 +252,14 @@ class Train {
 
     verifierExplosion() {
         const position = this.positions[0];
-		console.log(position.x < 0 || position.x >= LARGEUR_PLATEAU || position.y < 0 || position.y >= HAUTEUR_PLATEAU || plateau.cases[position.x][position.y] === Type_de_case.Eau || plateau.cases[position.x][position.y] === Type_de_case.Foret);
-        return (position.x < 0 || position.x >= LARGEUR_PLATEAU || position.y < 0 || position.y >= HAUTEUR_PLATEAU || plateau.cases[position.x][position.y] === Type_de_case.Eau || plateau.cases[position.x][position.y] === Type_de_case.Foret);
+		return (position.x < 0 || position.x >= LARGEUR_PLATEAU || position.y < 0 || position.y >= HAUTEUR_PLATEAU || plateau.cases[position.x][position.y] === Type_de_case.Eau || plateau.cases[position.x][position.y] === Type_de_case.Foret);
     }
 	stop(){
-		clearInterval(this.inter);
+		this.inMotion=false;
 	}
 
     move(){
-        this.inter = setInterval(() => {
-            this.avancer();
-        }, 500);
+        this.inMotion=true;
     }
 }
 
@@ -282,14 +292,12 @@ function dessine_case(contexte, plateau, x, y){
 }
 
 function dessine_plateau(page, plateau){
-	// Dessin du plateau avec paysages et rails
 	for (let x = 0; x < plateau.largeur; x++) {
 		for (let y = 0; y < plateau.hauteur; y++) {
 			dessine_case(page, plateau, x, y);
 		}
 	}
 
-	// NOTE: à compléter…
 }
 
 document.getElementById('bouton_foret').addEventListener('click', () => selectConstructionMode(Type_de_case.Foret));
@@ -356,7 +364,10 @@ function ajouterTrain(x, y, longueurTrain) {
     trains.push(newTrain);
 	newTrain.dessiner(contexte);
 	newTrain.move();
-	//--- Résoudre le 2x vitesse ici
+	if(!activerSimulation){
+		demarrerSimulation();
+		activerSimulation=true;
+	}
 }
 
 
@@ -377,28 +388,21 @@ function peutAjouterTrain(x, y, longueurTrain) {
 
 document.getElementById('bouton_pause').addEventListener('click',(event)=>togglePause());
 
-let enPause = false;
-let i=0; // ------------------- Problème si on ajoute un train après le premier pause. ( 2x Vitesse )
-let trainInterval;
-
-
 function togglePause() {
     enPause = !enPause; 
     const boutonPause = document.getElementById('bouton_pause');
     boutonPause.textContent = enPause ? "Redémarrer" : "Pause";
 	
     if (enPause) {
-		if( i===0 ){
-			trains.forEach(train => {
-				train.stop();
-			});
-			i++;
-		}else{
-			clearInterval(trainInterval);
-		}
-        
+		trains.forEach(train => {
+			train.stop();
+		});
+		clearInterval(trainInterval);
 	}else {
 		if(trains != null){
+			trains.forEach(train => {
+				train.move();
+			});
     	    demarrerSimulation();
 		}
     }
@@ -407,12 +411,14 @@ function togglePause() {
 function demarrerSimulation() {
     trainInterval = setInterval(() => {
         moveAllTrains();
-    }, 500); 
+    }, 500);
 }
 
 function moveAllTrains() {
     trains.forEach(train => {
-        train.avancer();
+        if(train.inMotion){
+			train.avancer();
+		}
     });
 }
 
