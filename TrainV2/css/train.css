@@ -1,24 +1,100 @@
-/************************************************************/
-/**
- * Université Sorbonne Paris Nord, Programmation Web
- * Auteurs                       : Étienne André
- * Création                      : 2023/12/11
- * Dernière modification         : 2024/05/21
- */
-/************************************************************/
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f0f0f0;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    width: 100%;
+    padding: 20px 0;
+    text-align: center;
+}
 
 h1 {
-	font-family	: monospace;
-	font-size	: 3em;
+    font-family: monospace;
+    font-size: 3em;
+    margin: 0;
 }
 
-#boutons input[type=image]
-{
-	height: 32px;
-	border: solid black 2px;
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
 }
-#boutons input[type=image]:disabled
-{
-    opacity:0.5;
-	border: solid red 2px;
+
+#simulateur {
+    border: 2px solid #333;
+    background-color: #fff;
+    margin-bottom: 20px;
+}
+
+#boutons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.bouton-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#boutons input[type=image] {
+    height: 40px;
+    border: solid black 2px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+	border-radius: 5px;
+}
+
+#boutons input[type=image]:hover {
+    transform: scale(1.1);
+}
+
+#boutons input[type=image]:disabled {
+    opacity: 0.5;
+    border: solid red 2px;
+    cursor: not-allowed;
+}
+
+#bouton_pause {
+    padding: 10px 20px;
+    font-size: 1em;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease; 
+	border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+#bouton_pause:hover {
+    background-color: #555;
+}
+
+.explosion {
+    position: absolute;
+    background: url('../images/explosion.gif') no-repeat center center;
+    background-size: contain;
+    pointer-events: none; 
+    z-index: 1000;
+}
+
+.dropWater {
+    position: absolute;
+    background: url('../images/water.gif') no-repeat center center;
+    background-size: contain;
+    pointer-events: none; 
+    z-index: 1000;
 }

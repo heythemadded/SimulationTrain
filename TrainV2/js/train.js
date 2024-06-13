@@ -1,12 +1,3 @@
-/************************************************************/
-/**
- * Université Sorbonne Paris Nord, Programmation Web
- * Auteurs                       : Étienne André
- * Création                      : 2023/12/11
- * Dernière modification         : 2024/04/25
- */
-/************************************************************/
-
 'use strict'
 
 /************************************************************/
@@ -134,11 +125,6 @@ class Plateau{
 	constructor(){
 		this.largeur = LARGEUR_PLATEAU;
 		this.hauteur = HAUTEUR_PLATEAU;
-
-		// NOTE: à compléter…
-
-		// État des cases du plateau
-		// NOTE: tableau de colonnes, chaque colonne étant elle-même un tableau de cases (beaucoup plus simple à gérer avec la syntaxe case[x][y] pour une coordonnée (x,y))
 		this.cases = [];
 		for (let x = 0; x < this.largeur; x++) {
 			this.cases[x] = [];
@@ -153,6 +139,11 @@ class Plateau{
 			this.cases[x][y] = type_de_case;
 		}
 	}
+
+	typeCase(x,y){
+		return this.cases[x][y];
+	}
+
 }
 // ----------- Classe Train
 class Train {
@@ -165,6 +156,52 @@ class Train {
         }
 		this.inMotion=false;
 		this.index=Gcode++;
+		this.sifflerCount=0;
+    }
+
+	siffler(){ // Corriger Siffler
+		let sifflerT = document.getElementById('shouuu');
+		sifflerT.currentTime = 0; 
+		sifflerT.play();
+        setTimeout(() => {
+            sifflerT.remove();
+        }, 3000);
+	}
+
+	afficherExplosion(x, y) {
+        const explosion = document.createElement('div');
+        explosion.classList.add('explosion');
+        explosion.style.width = `${LARGEUR_CASE}px`;
+        explosion.style.height = `${HAUTEUR_CASE}px`;
+        explosion.style.position = 'absolute';
+        explosion.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
+        explosion.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
+        document.body.appendChild(explosion);
+		//Add sound effect
+		const explosionSound = document.getElementById('explosion');
+		explosionSound.currentTime = 0; 
+		explosionSound.play();
+        setTimeout(() => {
+            explosion.remove();
+        }, 1000);
+    }
+
+	afficherWaterDropEffect(x, y) {
+        const dropWater = document.createElement('div');
+        dropWater.classList.add('dropWater');
+        dropWater.style.width = `${LARGEUR_CASE}px`;
+        dropWater.style.height = `${HAUTEUR_CASE}px`;
+        dropWater.style.position = 'absolute';
+        dropWater.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
+        dropWater.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
+        document.body.appendChild(dropWater);
+		//Add sound effect
+		const waterDropSound = document.getElementById('waterDropSound');
+		waterDropSound.currentTime = 0; 
+		waterDropSound.play();
+        setTimeout(() => {
+            dropWater.remove();
+        }, 1000);
     }
 
     avancer() {
@@ -182,18 +219,27 @@ class Train {
         this.positions.unshift(nouvellePosition);
 		
         if (this.verifierExplosion()) {
-            while(this.positions.length>0){
+			let pos = this.positions[0];
+			if(plateau.typeCase(pos.x,pos.y)==Type_de_case.Eau){
+				this.afficherWaterDropEffect(pos.x,pos.y);
+			}
+			else{
+				this.afficherExplosion(pos.x, pos.y);
+			}
+			while (this.positions.length > 0) {
 				this.supprimerCase();
 			}
 			const trainIndex = trains.findIndex(train => train.index === this.index);
 			if (trainIndex !== -1) {
 				trains.splice(trainIndex, 1);
 			}
-			if(trains.length===0){
-				activerSimulation=false;
+			if (trains.length === 0) {
+				activerSimulation = false;
 				clearInterval(trainInterval);
-			}
+            }
+			replayAudio();
         }
+
         this.mettreAJourDirection();
 		this.dessiner();
 		this.supprimerCase();
@@ -201,6 +247,7 @@ class Train {
 
 	
     mettreAJourDirection() {
+		
 		const pos = this.positions[0];
         const typeDeCase = plateau.cases[pos.x][pos.y];
         switch (typeDeCase) {
@@ -233,6 +280,12 @@ class Train {
 				}
                 break;
         }
+		if(this.sifflerCount===10){
+			this.siffler();
+			this.sifflerCount=0;
+		}else{
+			this.sifflerCount++;
+		}
     }
 
     dessiner() {
@@ -282,7 +335,6 @@ function image_of_case(type_de_case){
         case Type_de_case.Wagon: return IMAGE_WAGON;
     }
 }
-
 
 function dessine_case(contexte, plateau, x, y){
 	let la_case = plateau.cases[x][y];
@@ -368,6 +420,7 @@ function ajouterTrain(x, y, longueurTrain) {
 		demarrerSimulation();
 		activerSimulation=true;
 	}
+	sonTrain();
 }
 
 
