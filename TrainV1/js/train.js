@@ -182,17 +182,7 @@ class Train {
         this.positions.unshift(nouvellePosition);
 		
         if (this.verifierExplosion()) {
-            while(this.positions.length>0){
-				this.supprimerCase();
-			}
-			const trainIndex = trains.findIndex(train => train.index === this.index);
-			if (trainIndex !== -1) {
-				trains.splice(trainIndex, 1);
-			}
-			if(trains.length===0){
-				activerSimulation=false;
-				clearInterval(trainInterval);
-			}
+            this.exploser();
         }
         this.mettreAJourDirection();
 		this.dessiner();
@@ -200,40 +190,92 @@ class Train {
     }
 
 	
+    exploser(){
+		while(this.positions.length>0){
+			this.supprimerCase();
+		}
+		const trainIndex = trains.findIndex(train => train.index === this.index);
+		if (trainIndex !== -1) {
+			trains.splice(trainIndex, 1);
+		}
+		if(trains.length===0){
+			activerSimulation=false;
+			clearInterval(trainInterval);
+		}
+	}
+
     mettreAJourDirection() {
+		
 		const pos = this.positions[0];
         const typeDeCase = plateau.cases[pos.x][pos.y];
         switch (typeDeCase) {
             case Type_de_case.Rail_droite_vers_haut:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'gauche';
+					if(pos.y-1!=this.positions[1].y){
+						this.exploser();
+					}
+					else{
+						this.direction = 'gauche';
+					}
 				}else{
-					this.direction = 'haut';
+					if(pos.x-1!=this.positions[1].x){
+						this.exploser();
+					}else{
+						this.direction = 'haut';
+					}
 				}
 				break;
             case Type_de_case.Rail_haut_vers_droite:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'droite';
+					if(pos.y+1!=this.positions[1].y)
+						this.exploser();
+					else{	
+						this.direction = 'droite';
+					}
 				}else{
-					this.direction = 'bas';
+					if(pos.x+1!=this.positions[1].x){
+						this.exploser();
+					}else{
+						this.direction = 'bas';
+					}
 				}
                 break;
             case Type_de_case.Rail_droite_vers_bas:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'gauche';
+					if(pos.y+1!=this.positions[1].y){
+						this.exploser();
+					}else{
+						this.direction = 'gauche';
+					}
 				}else{
-					this.direction = 'bas';
+					if(pos.x-1!=this.positions[1].x){
+						this.exploser()
+					}
+					else{
+						this.direction = 'bas';
+					}
 				}
                 break;
             case Type_de_case.Rail_bas_vers_droite:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'droite';
+					if(pos.y-1!=this.positions[1].y){
+						this.exploser();
+					}else{
+						this.direction = 'droite';
+					}
 				}else{
-					this.direction = 'haut';
+					if(pos.x+1!=this.positions[1].x){
+						this.exploser()
+					}
+					else{
+						this.direction = 'haut';
+					}
 				}
                 break;
         }
+
     }
+
 
     dessiner() {
         this.positions.forEach((position, index) => {
@@ -254,6 +296,7 @@ class Train {
         const position = this.positions[0];
 		return (position.x < 0 || position.x >= LARGEUR_PLATEAU || position.y < 0 || position.y >= HAUTEUR_PLATEAU || plateau.cases[position.x][position.y] === Type_de_case.Eau || plateau.cases[position.x][position.y] === Type_de_case.Foret);
     }
+	
 	stop(){
 		this.inMotion=false;
 	}

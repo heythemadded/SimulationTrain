@@ -132,7 +132,26 @@ class Plateau{
 				this.cases[x][y] = Type_de_case.Foret;
 			}
 		}
+		this.randomEvent=['bomb', 'x2', 'unoReverse', 'div2'];
+		this.CasesSpeciale=[];
 	}
+
+	afficherEffetSpecial(x, y) {
+        const effetSpecial = document.createElement('div');
+		let event=this.randomEvent[Math.floor(Math.random()*4)]
+		this.CasesSpeciale.add([x,y,event]);
+        effetSpecial.classList.add(event);
+        effetSpecial.style.width = `${LARGEUR_CASE}px`;
+        effetSpecial.style.height = `${HAUTEUR_CASE}px`;
+        effetSpecial.style.position = 'absolute';
+        effetSpecial.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
+        effetSpecial.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
+        document.body.appendChild(effetSpecial);
+        
+        const sonEffetSpecial = document.getElementById('sonEffetSpecial');
+        sonEffetSpecial.currentTime = 0; 
+        sonEffetSpecial.play();
+    }
 
 	modifierCase(x, y, type_de_case) {
 		if (x >= 0 && x < this.largeur && y >= 0 && y < this.hauteur) {
@@ -145,6 +164,7 @@ class Plateau{
 	}
 
 }
+
 // ----------- Classe Train
 class Train {
     constructor(x, y, longueur) {
@@ -195,7 +215,6 @@ class Train {
         dropWater.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
         dropWater.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
         document.body.appendChild(dropWater);
-		//Add sound effect
 		const waterDropSound = document.getElementById('waterDropSound');
 		waterDropSound.currentTime = 0; 
 		waterDropSound.play();
@@ -219,7 +238,16 @@ class Train {
         this.positions.unshift(nouvellePosition);
 		
         if (this.verifierExplosion()) {
-			let pos = this.positions[0];
+			this.exploser();
+        }
+		// replayAudio();
+        this.mettreAJourDirection();
+		this.dessiner();
+		this.supprimerCase();
+    }
+
+	exploser(){
+		let pos = this.positions[0];
 			if(plateau.typeCase(pos.x,pos.y)==Type_de_case.Eau){
 				this.afficherWaterDropEffect(pos.x,pos.y);
 			}
@@ -237,15 +265,7 @@ class Train {
 				activerSimulation = false;
 				clearInterval(trainInterval);
             }
-			replayAudio();
-        }
-
-        this.mettreAJourDirection();
-		this.dessiner();
-		this.supprimerCase();
-    }
-
-	
+	}
     mettreAJourDirection() {
 		
 		const pos = this.positions[0];
@@ -253,39 +273,69 @@ class Train {
         switch (typeDeCase) {
             case Type_de_case.Rail_droite_vers_haut:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'gauche';
+					if(pos.y-1!=this.positions[1].y){
+						this.exploser();
+					}
+					else{
+						this.direction = 'gauche';
+					}
 				}else{
-					this.direction = 'haut';
+					if(pos.x-1!=this.positions[1].x){
+						this.exploser();
+					}else{
+						this.direction = 'haut';
+					}
 				}
 				break;
             case Type_de_case.Rail_haut_vers_droite:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'droite';
+					if(pos.y+1!=this.positions[1].y)
+						this.exploser();
+					else{	
+						this.direction = 'droite';
+					}
 				}else{
-					this.direction = 'bas';
+					if(pos.x+1!=this.positions[1].x){
+						this.exploser();
+					}else{
+						this.direction = 'bas';
+					}
 				}
                 break;
             case Type_de_case.Rail_droite_vers_bas:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'gauche';
+					if(pos.y+1!=this.positions[1].y){
+						this.exploser();
+					}else{
+						this.direction = 'gauche';
+					}
 				}else{
-					this.direction = 'bas';
+					if(pos.x-1!=this.positions[1].x){
+						this.exploser()
+					}
+					else{
+						this.direction = 'bas';
+					}
 				}
                 break;
             case Type_de_case.Rail_bas_vers_droite:
 				if(pos.y != this.positions[1].y){
-					this.direction = 'droite';
+					if(pos.y-1!=this.positions[1].y){
+						this.exploser();
+					}else{
+						this.direction = 'droite';
+					}
 				}else{
-					this.direction = 'haut';
+					if(pos.x+1!=this.positions[1].x){
+						this.exploser()
+					}
+					else{
+						this.direction = 'haut';
+					}
 				}
                 break;
         }
-		if(this.sifflerCount===10){
-			this.siffler();
-			this.sifflerCount=0;
-		}else{
-			this.sifflerCount++;
-		}
+
     }
 
     dessiner() {
@@ -475,22 +525,16 @@ function moveAllTrains() {
     });
 }
 
-// TODO : d'autres méthodes si besoin
+function declencherEffetSpecialAleatoire() {
+    const delaiAleatoire = Math.random() * 5000;
+    setTimeout(() => {
+        const xAleatoire = Math.floor(Math.random() * LARGEUR_PLATEAU);
+        const yAleatoire = Math.floor(Math.random() * HAUTEUR_PLATEAU);
+        plateau.afficherEffetSpecial(xAleatoire, yAleatoire);
+        declencherEffetSpecialAleatoire(); 
+    }, delaiAleatoire);
+}
 
-
-/************************************************************/
-// Auditeurs
-/************************************************************/
-
-// TODO
-
-
-/************************************************************/
-// Plateau de jeu initial
-/************************************************************/
-
-
-// NOTE : ne pas modifier le plateau initial
 function cree_plateau_initial(plateau){
 	// Circuit
 	plateau.cases[12][7] = Type_de_case.Rail_horizontal;
@@ -597,15 +641,12 @@ function cree_plateau_initial(plateau){
 
 function tchou(){
 	console.log("Tchou, attention au départ !");
-	/*------------------------------------------------------------*/
-	// Variables DOM
-	/*------------------------------------------------------------*/
 	contexte = document.getElementById('simulateur').getContext("2d");
-	// NOTE: ce qui suit est sûrement à compléter voire à réécrire intégralement
 	plateau = new Plateau();
 	cree_plateau_initial(plateau);
-	// Dessine le plateau
+	
 	dessine_plateau(contexte, plateau);
+	declencherEffetSpecialAleatoire();
 }
 
 /************************************************************/
