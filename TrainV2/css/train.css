@@ -78,7 +78,17 @@ main {
 	border-radius: 5px;
     margin-bottom: 10px;
 }
-
+#triggerButton {
+    padding: 10px 20px;
+    font-size: 1em;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease; 
+	border-radius: 5px;
+    margin-bottom: 10px;
+}
 #bouton_pause:hover {
     background-color: #555;
 }
@@ -97,4 +107,32 @@ main {
     background-size: contain;
     pointer-events: none; 
     z-index: 1000;
+}
+
+.turtle{
+    background-image: url('../images/turtle.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 10;
+}
+
+.switch{
+    background-image: url('../images/switch.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 10;
+}
+
+.bomb{
+    background-image: url('../images/bomb.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 10;
+}
+
+.rocket{
+    background-image: url('../images/rocket.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 10;
 }

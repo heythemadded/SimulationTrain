@@ -44,6 +44,11 @@ class Type_de_case{
 	static Locomotive = new Type_de_case('locomotive');
     static Wagon = new Type_de_case('wagon');
 
+	// static Bomb = new Type_de_case('bomb');
+	// static unoReverse = new Type_de_case('uno');
+	// static Rocket = new Type_de_case('rocket');
+	// static Turtle = new Type_de_case('Turtle');
+
 	constructor(nom) {
 		this.nom = nom;
 	}
@@ -58,7 +63,7 @@ const IMAGE_EAU = new Image();
 IMAGE_EAU.src = 'images/eau.png';
 
 const IMAGE_FORET = new Image();
-IMAGE_FORET.src = 'images/foret.png';
+IMAGE_FORET.src = 'images/grass.jpg';
 
 const IMAGE_LOCO = new Image();
 IMAGE_LOCO.src = 'images/locomotive.png';
@@ -84,11 +89,24 @@ IMAGE_RAIL_HAUT_VERS_DROITE.src = 'images/rail-haut-vers-droite.png';
 const IMAGE_WAGON = new Image();
 IMAGE_WAGON.src = 'images/wagon.png';
 
+const IMAGE_TURTLE = new Image();
+IMAGE_TURTLE.src = 'images/turtle.png';
+
+const IMAGE_ROCKET = new Image();
+IMAGE_ROCKET.src = 'images/rocket.png';
+
+const IMAGE_UNO = new Image();
+IMAGE_UNO.src = 'images/unoReverse.gif';
+
+const IMAGE_BOMB = new Image();
+IMAGE_BOMB.src = 'images/bomb.png';
 
 /************************************************************/
 // Variables globales
 /************************************************************/
 
+let compteurEffetsSpeciaux = 0;
+const MAX_EFFETS_SPECIAUX = 4;
 let activerSimulation = false;
 let enPause = false;
 let trainInterval;
@@ -132,25 +150,64 @@ class Plateau{
 				this.cases[x][y] = Type_de_case.Foret;
 			}
 		}
-		this.randomEvent=['bomb', 'x2', 'unoReverse', 'div2'];
+		this.randomEvent=['bomb', 'rocket', 'switch', 'turtle'];
 		this.CasesSpeciale=[];
 	}
 
 	afficherEffetSpecial(x, y) {
         const effetSpecial = document.createElement('div');
-		let event=this.randomEvent[Math.floor(Math.random()*4)]
-		this.CasesSpeciale.add([x,y,event]);
+        let event = this.randomEvent[Math.floor(Math.random() * this.randomEvent.length)];
+        this.CasesSpeciale.push([x, y, event]);
         effetSpecial.classList.add(event);
         effetSpecial.style.width = `${LARGEUR_CASE}px`;
         effetSpecial.style.height = `${HAUTEUR_CASE}px`;
         effetSpecial.style.position = 'absolute';
-        effetSpecial.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
-        effetSpecial.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
+        effetSpecial.style.left = `${x * LARGEUR_CASE}px`;
+        effetSpecial.style.top = `${y * HAUTEUR_CASE}px`;
         document.body.appendChild(effetSpecial);
-        
+
         const sonEffetSpecial = document.getElementById('sonEffetSpecial');
-        sonEffetSpecial.currentTime = 0; 
+        sonEffetSpecial.currentTime = 0;
         sonEffetSpecial.play();
+    }
+
+    // Method to handle train arrival on special cases
+    handleTrainArrival(x, y) {
+        for (let i = 0; i < this.CasesSpeciale.length; i++) {
+            const [specialX, specialY, event] = this.CasesSpeciale[i];
+            if (x === specialX && y === specialY) {
+                // Perform action based on event type (e.g., trigger specific behavior)
+                switch (event) {
+                    case 'bomb':
+                        // Example: Decrease health or trigger explosion animation
+                        console.log('Train arrived on a bomb!');
+                        break;
+                    case 'rocket':
+                        // Example: Launch rocket animation
+                        console.log('Train arrived on a rocket!');
+                        break;
+                    case 'unoReverse':
+                        // Example: Reverse direction of train
+                        console.log('Train arrived on an Uno Reverse!');
+                        break;
+                    case 'turtle':
+                        // Example: Slow down train or trigger turtle animation
+                        console.log('Train arrived on a turtle!');
+                        break;
+                    default:
+                        console.log('Unknown event type:', event);
+                }
+            }
+        }
+    }
+
+    // Method to trigger multiple random special effects
+    declencherEffetsSpeciaux() {
+        for (let i = 0; i < 4; i++) {
+            const xAleatoire = Math.floor(Math.random() * this.largeur);
+            const yAleatoire = Math.floor(Math.random() * this.hauteur);
+            this.afficherEffetSpecial(xAleatoire, yAleatoire);
+        }
     }
 
 	modifierCase(x, y, type_de_case) {
@@ -266,8 +323,8 @@ class Train {
 				clearInterval(trainInterval);
             }
 	}
-    mettreAJourDirection() {
-		
+
+    mettreAJourDirection() {	
 		const pos = this.positions[0];
         const typeDeCase = plateau.cases[pos.x][pos.y];
         switch (typeDeCase) {
@@ -344,7 +401,6 @@ class Train {
             const image = image_of_case(type);
             contexte.drawImage(image, position.x * LARGEUR_CASE, position.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
         });
-		
     }
 
 	supprimerCase(){
@@ -399,7 +455,6 @@ function dessine_plateau(page, plateau){
 			dessine_case(page, plateau, x, y);
 		}
 	}
-
 }
 
 document.getElementById('bouton_foret').addEventListener('click', () => selectConstructionMode(Type_de_case.Foret));
@@ -474,6 +529,7 @@ function ajouterTrain(x, y, longueurTrain) {
 }
 
 
+
 function peutAjouterTrain(x, y, longueurTrain) {
 
 	if (x - longueurTrain + 1 < 0 || y >= plateau.hauteur) {
@@ -524,19 +580,17 @@ function moveAllTrains() {
 		}
     });
 }
+// listner for effet spéc
 
-function declencherEffetSpecialAleatoire() {
-    const delaiAleatoire = Math.random() * 5000;
-    setTimeout(() => {
-        const xAleatoire = Math.floor(Math.random() * LARGEUR_PLATEAU);
-        const yAleatoire = Math.floor(Math.random() * HAUTEUR_PLATEAU);
-        plateau.afficherEffetSpecial(xAleatoire, yAleatoire);
-        declencherEffetSpecialAleatoire(); 
-    }, delaiAleatoire);
+const triggerButton = document.getElementById('triggerButton');
+if (triggerButton) {
+    triggerButton.addEventListener('click', () => {
+        plateau.declencherEffetsSpeciaux();
+    });
 }
 
 function cree_plateau_initial(plateau){
-	// Circuit
+
 	plateau.cases[12][7] = Type_de_case.Rail_horizontal;
 	plateau.cases[13][7] = Type_de_case.Rail_horizontal;
 	plateau.cases[14][7] = Type_de_case.Rail_horizontal;
