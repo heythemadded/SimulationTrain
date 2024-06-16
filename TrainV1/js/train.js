@@ -288,8 +288,13 @@ class Train {
 
 	supprimerCase(){
 		const dernierePosition = this.positions[this.positions.length - 1];
-        contexte.drawImage(image_of_case(plateau.cases[dernierePosition.x][dernierePosition.y]),dernierePosition.x * LARGEUR_CASE, dernierePosition.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
-		this.positions.pop();
+        if(dernierePosition.x < 0 || dernierePosition.x >= LARGEUR_PLATEAU || dernierePosition.y < 0 || dernierePosition.y >= HAUTEUR_PLATEAU){
+			this.positions.pop();this.stop();
+			return;
+		}else{
+			contexte.drawImage(image_of_case(plateau.cases[dernierePosition.x][dernierePosition.y]),dernierePosition.x * LARGEUR_CASE, dernierePosition.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
+			this.positions.pop();
+		}
 	}
 
     verifierExplosion() {
