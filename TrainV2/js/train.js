@@ -247,16 +247,12 @@ class Train {
         }
 		this.inMotion=false;
 		this.index=Gcode++;
-		this.sifflerCount=0;
     }
 
-	siffler(){ // Corriger Siffler
+	siffler(){
 		let sifflerT = document.getElementById('shouuu');
 		sifflerT.currentTime = 0; 
 		sifflerT.play();
-        setTimeout(() => {
-            sifflerT.remove();
-        }, 3000);
 	}
 
 	reverse(){
@@ -587,7 +583,7 @@ function ajouterTrain(x, y, longueurTrain) {
 		demarrerSimulation();
 		activerSimulation=true;
 	}
-	sonTrain();
+	newTrain.siffler();
 }
 
 

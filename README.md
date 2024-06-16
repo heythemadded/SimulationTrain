@@ -17,3 +17,4 @@ Ajouter aléatoirement sur les cases rails et les choix des effets ajoutées son
 Amélioration du graphism et du layout du jeu. 
 Ajout de gif waterEffect quand le train tombe d'une flac d'eau et explosion quand il déraille. 
 Ajout de sound effects pour chaque cas.
+Ajout de son de train lors de l'ajout d'un nouveau train.
