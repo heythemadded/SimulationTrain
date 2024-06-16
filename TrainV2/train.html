@@ -4,15 +4,15 @@
     <meta charset="utf-8">
     <title>Simulateur de trains</title>
     <link rel="stylesheet" href="css/train.css">
-	<audio id="waterDropSound" onended="this.remove()">
+	<audio id="waterDropSound">
 		<source src="Sounds/splash-6213.mp3" type="audio/mpeg">
 		Your browser does not support the audio element.
 	</audio>
-	<audio id="explosion" onended="this.remove()">
+	<audio id="explosion" >
 		<source src="Sounds/small-explosion-129477.mp3" type="audio/mpeg">
 		Your browser does not support the audio element.
 	</audio>
-	<audio id="shouuu" onended="this.remove()">
+	<audio id="shouuu" >
 		<source src="Sounds/toy-train-whistle-1-188148.mp3" type="audio/mpeg">
 		Your browser does not support the audio element.
 	</audio>
@@ -53,6 +53,11 @@
             </div>
 
             <button type="button" id="bouton_pause">Pause</button>
+        </div>
+
+        <div id="explicationEffetSpecial">
+            <div id="explicationText"></div>
+            <button id="closeExplication">Fermer</button>
         </div>
     </main>
 

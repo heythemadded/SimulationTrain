@@ -104,7 +104,7 @@ IMAGE_BOMB.src = 'images/bomb.png';
 /************************************************************/
 // Variables globales
 /************************************************************/
-
+let vitesse = 1;
 let compteurEffetsSpeciaux = 0;
 const MAX_EFFETS_SPECIAUX = 4;
 let activerSimulation = false;
@@ -162,52 +162,66 @@ class Plateau{
         effetSpecial.style.width = `${LARGEUR_CASE}px`;
         effetSpecial.style.height = `${HAUTEUR_CASE}px`;
         effetSpecial.style.position = 'absolute';
-        effetSpecial.style.left = `${x * LARGEUR_CASE}px`;
-        effetSpecial.style.top = `${y * HAUTEUR_CASE}px`;
+        effetSpecial.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
+        effetSpecial.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
+		effetSpecial.id = `special-${x}-${y}`;
         document.body.appendChild(effetSpecial);
 
         const sonEffetSpecial = document.getElementById('sonEffetSpecial');
         sonEffetSpecial.currentTime = 0;
         sonEffetSpecial.play();
+
+		switch (event) {
+			case 'bomb':
+				explicationText.textContent = 'La bombe explose, déclenchant une animation d\'explosion.';
+				break;
+			case 'rocket':
+				explicationText.textContent = 'La fusée augmente la vitesse des trains.';
+				break;
+			case 'switch':
+				explicationText.textContent = 'Le Switch inverse la direction des trains.';
+				break;
+			case 'turtle':
+				explicationText.textContent = 'La tortue ralentit la vitesse des trains.';
+				break;
+			default:
+				explicationText.textContent = 'Effet spécial inconnu.';
+		}
+		explicationDiv.style.display = 'block';
+
+		setTimeout(() => {
+			explicationDiv.style.display = 'none';
+		}, 8000);
     }
 
-    // Method to handle train arrival on special cases
-    handleTrainArrival(x, y) {
-        for (let i = 0; i < this.CasesSpeciale.length; i++) {
-            const [specialX, specialY, event] = this.CasesSpeciale[i];
-            if (x === specialX && y === specialY) {
-                // Perform action based on event type (e.g., trigger specific behavior)
-                switch (event) {
-                    case 'bomb':
-                        // Example: Decrease health or trigger explosion animation
-                        console.log('Train arrived on a bomb!');
-                        break;
-                    case 'rocket':
-                        // Example: Launch rocket animation
-                        console.log('Train arrived on a rocket!');
-                        break;
-                    case 'unoReverse':
-                        // Example: Reverse direction of train
-                        console.log('Train arrived on an Uno Reverse!');
-                        break;
-                    case 'turtle':
-                        // Example: Slow down train or trigger turtle animation
-                        console.log('Train arrived on a turtle!');
-                        break;
-                    default:
-                        console.log('Unknown event type:', event);
-                }
-            }
+    deleteEffetSpecial(x, y) {
+        const effetSpecial = document.getElementById(`special-${x}-${y}`);
+        if (effetSpecial) {
+            effetSpecial.remove();
         }
+        this.CasesSpeciale = this.CasesSpeciale.filter(([sx, sy]) => !(sx === x && sy === y));
     }
 
-    // Method to trigger multiple random special effects
     declencherEffetsSpeciaux() {
+		stopOrdStart(true);
         for (let i = 0; i < 4; i++) {
-            const xAleatoire = Math.floor(Math.random() * this.largeur);
-            const yAleatoire = Math.floor(Math.random() * this.hauteur);
-            this.afficherEffetSpecial(xAleatoire, yAleatoire);
+			setTimeout(() => {
+                let rail = false;
+                let xAleatoire;
+                let yAleatoire;
+                while (!rail) {
+                    xAleatoire = Math.floor(Math.random() * this.largeur);
+                    yAleatoire = Math.floor(Math.random() * this.hauteur);
+                    if (this.cases[xAleatoire][yAleatoire] !== Type_de_case.Eau && this.cases[xAleatoire][yAleatoire] !== Type_de_case.Foret) {
+						if (!this.CasesSpeciale.some(([sx, sy]) => sx === xAleatoire && sy === yAleatoire)) {
+                            rail = true;
+                        }
+                    }
+                }
+                this.afficherEffetSpecial(xAleatoire, yAleatoire);
+            }, i * 2000);
         }
+		stopOrdStart(false);
     }
 
 	modifierCase(x, y, type_de_case) {
@@ -245,6 +259,40 @@ class Train {
         }, 3000);
 	}
 
+	reverse(){
+		switch(this.direction){
+			case 'droite' : this.direction='gauche' ; break;
+			case 'gauche' : this.direction='droite' ; break;
+			case 'bas' : this.direction='haut' ; break;
+			case 'haut' : this.direction = 'bas' ; break;
+		}
+	}
+
+	handleTrainEffetSpeciale(x, y) {
+        for (let i = 0; i < plateau.CasesSpeciale.length; i++) {
+            const [specialX, specialY, event] = plateau.CasesSpeciale[i];
+            if (x === specialX && y === specialY) {
+                switch (event) {
+                    case 'bomb':
+                        this.exploser();
+                        break;
+                    case 'rocket':
+                        vitesse /=2;
+						stopOrdStart(true);stopOrdStart(false);
+                        break;
+                    case 'switch':
+                        this.reverse();
+                        break;
+                    case 'turtle':
+						vitesse *=2;
+						stopOrdStart(true);stopOrdStart(false); 
+                        break;
+                }
+                plateau.deleteEffetSpecial(specialX, specialY);
+            }
+        }
+    }
+
 	afficherExplosion(x, y) {
         const explosion = document.createElement('div');
         explosion.classList.add('explosion');
@@ -254,10 +302,14 @@ class Train {
         explosion.style.left = `${(x+6.7) * LARGEUR_CASE}px`;
         explosion.style.top = `${(y+2.7) * HAUTEUR_CASE}px`;
         document.body.appendChild(explosion);
-		//Add sound effect
+		
 		const explosionSound = document.getElementById('explosion');
-		explosionSound.currentTime = 0; 
-		explosionSound.play();
+		if (explosionSound) {
+			explosionSound.currentTime = 0; 
+			explosionSound.play();
+		} else {
+			console.error('Element with ID "explosion" not found.');
+		}
         setTimeout(() => {
             explosion.remove();
         }, 1000);
@@ -291,13 +343,12 @@ class Train {
         } else if (this.direction === 'bas') {
             nouvellePosition.y++;
         }
-
         this.positions.unshift(nouvellePosition);
 		
         if (this.verifierExplosion()) {
 			this.exploser();
         }
-		// replayAudio();
+		this.handleTrainEffetSpeciale(nouvellePosition.x,nouvellePosition.y);
         this.mettreAJourDirection();
 		this.dessiner();
 		this.supprimerCase();
@@ -305,27 +356,32 @@ class Train {
 
 	exploser(){
 		let pos = this.positions[0];
-			if(plateau.typeCase(pos.x,pos.y)==Type_de_case.Eau){
-				this.afficherWaterDropEffect(pos.x,pos.y);
-			}
-			else{
-				this.afficherExplosion(pos.x, pos.y);
-			}
-			while (this.positions.length > 0) {
-				this.supprimerCase();
-			}
-			const trainIndex = trains.findIndex(train => train.index === this.index);
-			if (trainIndex !== -1) {
-				trains.splice(trainIndex, 1);
-			}
-			if (trains.length === 0) {
-				activerSimulation = false;
-				clearInterval(trainInterval);
-            }
+		if(pos.x < 0 || pos.x >= LARGEUR_PLATEAU || pos.y < 0 || pos.y >= HAUTEUR_PLATEAU || plateau.typeCase(pos.x,pos.y)==Type_de_case.Foret){
+			this.afficherExplosion(pos.x, pos.y);
+		}
+		else if(plateau.typeCase(pos.x,pos.y)==Type_de_case.Eau){
+			this.afficherWaterDropEffect(pos.x,pos.y);
+		}else{
+			this.afficherExplosion(pos.x, pos.y);
+		}
+		while (this.positions.length > 0) {
+			this.supprimerCase();
+		}
+		const trainIndex = trains.findIndex(train => train.index === this.index);
+		if (trainIndex !== -1) {
+			trains.splice(trainIndex, 1);
+		}
+		if (trains.length === 0) {
+			activerSimulation = false;
+			clearInterval(trainInterval);
+		}
 	}
 
     mettreAJourDirection() {	
 		const pos = this.positions[0];
+		if(pos.x < 0 || pos.x >= LARGEUR_PLATEAU || pos.y < 0 || pos.y >= HAUTEUR_PLATEAU || plateau.typeCase(pos.x,pos.y)==Type_de_case.Foret){
+			this.stop();return;
+		}
         const typeDeCase = plateau.cases[pos.x][pos.y];
         switch (typeDeCase) {
             case Type_de_case.Rail_droite_vers_haut:
@@ -405,8 +461,14 @@ class Train {
 
 	supprimerCase(){
 		const dernierePosition = this.positions[this.positions.length - 1];
-        contexte.drawImage(image_of_case(plateau.cases[dernierePosition.x][dernierePosition.y]),dernierePosition.x * LARGEUR_CASE, dernierePosition.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
-		this.positions.pop();
+		if(dernierePosition.x < 0 || dernierePosition.x >= LARGEUR_PLATEAU || dernierePosition.y < 0 || dernierePosition.y >= HAUTEUR_PLATEAU){
+			this.positions.pop();this.stop();
+			return;
+		}else{
+			contexte.drawImage(image_of_case(plateau.cases[dernierePosition.x][dernierePosition.y]),dernierePosition.x * LARGEUR_CASE, dernierePosition.y * HAUTEUR_CASE, LARGEUR_CASE, HAUTEUR_CASE);
+			this.positions.pop();
+		}
+        
 	}
 
     verifierExplosion() {
@@ -552,13 +614,17 @@ function togglePause() {
     const boutonPause = document.getElementById('bouton_pause');
     boutonPause.textContent = enPause ? "Redémarrer" : "Pause";
 	
-    if (enPause) {
+    stopOrdStart(enPause);
+}
+
+function stopOrdStart(enPause){
+	if (enPause) {
 		trains.forEach(train => {
 			train.stop();
 		});
 		clearInterval(trainInterval);
 	}else {
-		if(trains != null){
+		if(trains.length !== 0){
 			trains.forEach(train => {
 				train.move();
 			});
@@ -570,7 +636,7 @@ function togglePause() {
 function demarrerSimulation() {
     trainInterval = setInterval(() => {
         moveAllTrains();
-    }, 500);
+    }, 500*vitesse);
 }
 
 function moveAllTrains() {
@@ -580,14 +646,24 @@ function moveAllTrains() {
 		}
     });
 }
-// listner for effet spéc
 
+// listner for effet spéc
 const triggerButton = document.getElementById('triggerButton');
+const explicationDiv = document.getElementById('explicationEffetSpecial');
+const explicationText = document.getElementById('explicationText');
+const closeExplicationButton = document.getElementById('closeExplication');
+
 if (triggerButton) {
     triggerButton.addEventListener('click', () => {
         plateau.declencherEffetsSpeciaux();
+        triggerButton.disabled = true;
     });
 }
+
+closeExplicationButton.addEventListener('click', () => {
+    explicationDiv.style.display = 'none';
+});
+
 
 function cree_plateau_initial(plateau){
 
@@ -700,7 +776,6 @@ function tchou(){
 	cree_plateau_initial(plateau);
 	
 	dessine_plateau(contexte, plateau);
-	declencherEffetSpecialAleatoire();
 }
 
 /************************************************************/

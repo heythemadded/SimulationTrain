@@ -89,6 +89,13 @@ main {
 	border-radius: 5px;
     margin-bottom: 10px;
 }
+
+#triggerButton:disabled {
+    background-color: #6c757d; 
+    color: #fff; 
+    cursor: not-allowed;
+}
+
 #bouton_pause:hover {
     background-color: #555;
 }
@@ -135,4 +142,44 @@ main {
     background-size: contain;
     background-repeat: no-repeat;
     z-index: 10;
+}
+
+/* Ajoutez ces styles dans votre feuille de style CSS */
+
+#explicationEffetSpecial {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    transition: opacity 0.3s ease;
+}
+
+#explicationEffetSpecial.show {
+    opacity: 1;
+}
+
+#explicationText {
+    font-size: 16px;
+    line-height: 1.4;
+    margin-bottom: 15px;
+}
+
+#closeExplication {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#closeExplication:hover {
+    background-color: #0056b3;
 }
